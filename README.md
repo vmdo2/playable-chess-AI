@@ -1,2 +1,2 @@
-# playable_chess_AI
+# playable-chess-AI
 This repo contains a playable chess AI.
