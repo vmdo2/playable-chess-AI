@@ -1,7 +1,7 @@
 import os,sys,argparse
 import random
 import pygame
-import chess.lib
+import mychess.lib
 import submitted
 
 ################################################################################################
@@ -12,7 +12,7 @@ import submitted
 class Application():
     def __init__(self, players, depths, breadths, movestr="", heuristic=None):
         self.moves = movestr.split()
-        self.side, self.board, self.flags = chess.lib.convertMoves(self.moves)
+        self.side, self.board, self.flags = mychess.lib.convertMoves(self.moves)
 
         # mp5 player0 corresponds to "side False"==white==MAX in PyChess
         self.player = players
@@ -39,14 +39,14 @@ class Application():
         Morph self.side, self.board, and self.flags in response to the move.
         Append the move to the list self.moves.
         '''
-        promote = chess.lib.getPromote(self.win, self.side, self.board, fro, to)
-        if not chess.lib.core.getType(self.side, self.board, fro):
+        promote = mychess.lib.getPromote(self.win, self.side, self.board, fro, to)
+        if not mychess.lib.core.getType(self.side, self.board, fro):
             raise RunTimeError('Player %d has no piece at position %d, %d'%(int(self.side),fro[0],fro[1]))
-        chess.lib.animate(self.win, int(self.side), self.board, fro, to, self.prefs,
+        mychess.lib.animate(self.win, int(self.side), self.board, fro, to, self.prefs,
                           self.player[True]=='human')
-        self.side, self.board, self.flags = chess.lib.makeMove(
+        self.side, self.board, self.flags = mychess.lib.makeMove(
             self.side,  self.board, fro, to, self.flags, promote)
-        self.moves.append(chess.lib.encode(fro, to, promote))
+        self.moves.append(mychess.lib.encode(fro, to, promote))
 
     def heuristic_move(side, board, flags):
         'Use a provided heuristic function to choose a move'
@@ -62,10 +62,10 @@ class Application():
         self.prefs = { 'flip' : True, 'allow_undo' : True, 'show_moves' : True }
 
         clock = pygame.time.Clock()
-        chess.lib.start(self.win, self.prefs)
+        mychess.lib.start(self.win, self.prefs)
 
         # Continue until there is no move left for the current player
-        while not chess.lib.isEnd(self.side, self.board, self.flags):
+        while not mychess.lib.isEnd(self.side, self.board, self.flags):
             clock.tick(25)
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
@@ -75,14 +75,14 @@ class Application():
                     if self.buttons['quit'].collidepoint(x,y):
                         self.close()
                     elif self.buttons['saveGame'].collidepoint(x,y):
-                        if chess.lib.prompt(self.win, chess.lib.saveGame(self.moves, "mp5", player)):
+                        if mychess.lib.prompt(self.win, mychess.lib.saveGame(self.moves, "mp5", player)):
                             self.close()
                     elif self.buttons['undo'].collidepoint(x,y):
                         if self.player[self.side]=='human':
-                            self.moves = chess.lib.undo(self.moves, 2)
+                            self.moves = mychess.lib.undo(self.moves, 2)
                         else:
-                            self.moves = chess.lib.undo(self.moves)
-                        self.side, self.board, self.flags = chess.lib.convertMoves(self.moves)
+                            self.moves = mychess.lib.undo(self.moves)
+                        self.side, self.board, self.flags = mychess.lib.convertMoves(self.moves)
 
                     elif self.player[self.side] == 'human' and 50 < x < 450 and 50 < y < 450:
                         x, y = x // 50, y // 50         # convert x and y to chess coords
@@ -90,7 +90,7 @@ class Application():
                             x, y = 9 - x, 9 - y
                         fro = self.sel
                         self.sel = to = [x, y]
-                        if chess.lib.isValidMove(self.side, self.board, self.flags, fro, to):
+                        if mychess.lib.isValidMove(self.side, self.board, self.flags, fro, to):
                             self.makemove(fro, to)
 
             if self.player[self.side] != 'human':
@@ -117,7 +117,7 @@ class Application():
                         self.breadth[self.side], random.choice)
                 self.makemove(moveList[0][0], moveList[0][1])
             
-            chess.lib.showScreen(self.win, self.side, self.board, self.flags, self.sel,
+            mychess.lib.showScreen(self.win, self.side, self.board, self.flags, self.sel,
                                  self.prefs, self.player[True]=='human')
 
         # Now that the game is done, continue showing the screen until the user clicks quit
@@ -131,12 +131,12 @@ class Application():
                     if self.buttons['quit'].collidepoint(x,y):
                         self.close()
                     elif self.buttons['saveGame'].collidepoint(x,y):
-                        if chess.lib.prompt(self.win, chess.lib.saveGame(self.moves, "mp5", self.side)):
+                        if mychess.lib.prompt(self.win, mychess.lib.saveGame(self.moves, "mp5", self.side)):
                             self.close()
                     elif self.buttons['undo'].collidepoint(x,y):
-                        self.moves = chess.lib.undo(self.moves)
-                        self.side, self.board, self.flags = chess.lib.convertMoves(self.moves)
-                        chess.lib.showScreen(self.win, self.side, self.board, self.flags, self.sel,
+                        self.moves = mychess.lib.undo(self.moves)
+                        self.side, self.board, self.flags = mychess.lib.convertMoves(self.moves)
+                        mychess.lib.showScreen(self.win, self.side, self.board, self.flags, self.sel,
                                              self.prefs, self.player[True]=='human')
 
 ################################################################################################

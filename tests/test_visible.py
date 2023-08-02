@@ -2,9 +2,9 @@ import unittest, json, os
 from gradescope_utils.autograder_utils.decorators import weight
 os.environ['PYGAME_HIDE_SUPPORT_PROMPT'] = "hide"
 import submitted
-from chess.lib.utils import encode, decode, initBoardVars
-from chess.lib.heuristics import evaluate
-from chess.lib.core import makeMove
+from mychess.lib.utils import encode, decode, initBoardVars
+from mychess.lib.heuristics import evaluate
+from mychess.lib.core import makeMove
 
 EXAMPLESDIR = 'grading_examples'
 

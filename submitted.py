@@ -1,8 +1,8 @@
 import math
-import chess.lib
-from chess.lib.utils import encode, decode
-from chess.lib.heuristics import evaluate
-from chess.lib.core import makeMove
+import mychess.lib
+from mychess.lib.utils import encode, decode
+from mychess.lib.heuristics import evaluate
+from mychess.lib.core import makeMove
 
 ###########################################################################################
 # Utility function: Determine all the legal moves available for the side.
@@ -11,8 +11,8 @@ from chess.lib.core import makeMove
 def generateMoves(side, board, flags):
     for piece in board[side]:
         fro = piece[:2]
-        for to in chess.lib.availableMoves(side, board, piece, flags):
-            promote = chess.lib.getPromote(None, side, board, fro, to, single=True)
+        for to in mychess.lib.availableMoves(side, board, piece, flags):
+            promote = mychess.lib.getPromote(None, side, board, fro, to, single=True)
             yield [fro, to, promote]
             
 ###########################################################################################
