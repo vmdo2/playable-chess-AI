@@ -98,10 +98,13 @@ class ChessGame:
         # Check if it's the AI's turn and get its move
         if not self.board.is_game_over():
             if self.board.turn and self.white_player == "engine" or not self.board.turn and self.black_player == "engine":
-                ai_move = chess_player.get_best_move(self.board)
+                ai_move = chess_player.get_best_move(self.board, 1)
                 self.board.push(ai_move)
             elif self.board.turn and self.white_player == "random" or not self.board.turn and self.black_player == "random":
                 ai_move = chess_player.random_move_player(self.board)
+                self.board.push(ai_move)
+            elif self.board.turn and self.white_player == "alphabeta" or not self.board.turn and self.black_player == "alphabeta":
+                ai_move = chess_player.get_best_move_alphabeta(self.board, 2)
                 self.board.push(ai_move)
 
     # Function to run the game loop
@@ -126,7 +129,7 @@ class ChessGame:
         pygame.quit()
 
 def main():
-    game = ChessGame("engine", "random")
+    game = ChessGame("random", "alphabeta")
     game.run()
 
 

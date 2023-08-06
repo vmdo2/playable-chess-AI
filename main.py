@@ -96,7 +96,7 @@ class Application():
             if self.player[self.side] != 'human':
                 self.sel = [0,0]
                 if self.player[self.side] == 'random':
-                    value, moveList, moveTree = submitted.random_move_player(
+                    value, moveList, moveTree = submitted.random(
                         self.side, self.board, self.flags, random.choice)
                 elif self.player[self.side] == 'minimax':
                     value, moveList, moveTree = submitted.minimax(
