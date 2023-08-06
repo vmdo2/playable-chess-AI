@@ -3,93 +3,132 @@ from PIL import Image
 import chess
 import chess_player
 
-# Set up the Pygame window
-pygame.init()
-WINDOW_SIZE = 400
-screen = pygame.display.set_mode((WINDOW_SIZE, WINDOW_SIZE))
-pygame.display.set_caption('Chessboard')
-clock = pygame.time.Clock()
+class ChessGame:
+    def __init__(self, white_player="you", black_player="you"):
+        # Set up the Pygame window
+        pygame.init()
+        self.WINDOW_SIZE = 400
+        self.screen = pygame.display.set_mode((self.WINDOW_SIZE, self.WINDOW_SIZE))
+        pygame.display.set_caption('Chessboard')
+        self.clock = pygame.time.Clock()
 
-# Load the chessboard image from your computer
-board_image_path = "C:/Users/vince/Downloads/pieces/board.png"  # Replace this with the file path to the downloaded chessboard image
-image = Image.open(board_image_path)
-image = image.resize((WINDOW_SIZE, WINDOW_SIZE))
+        # Load the chessboard image from your computer
+        board_image_path = "C:/Users/vince/Downloads/pieces/board.png"  # Replace this with the file path to the downloaded chessboard image
+        image = Image.open(board_image_path)
+        image = image.resize((self.WINDOW_SIZE, self.WINDOW_SIZE))
+            
+        # Convert the PIL image to a Pygame surface
+        mode = image.mode
+        size = image.size
+        data = image.tobytes()
+        self.chessboard_img = pygame.image.fromstring(data, size, mode)
 
-# Convert the PIL image to a Pygame surface
-mode = image.mode
-size = image.size
-data = image.tobytes()
-chessboard_img = pygame.image.fromstring(data, size, mode)
+        # Initialize the chessboard and other variables
+        self.board = chess.Board()
+        self.selected_square = None
 
-# Initialize the chessboard and other variables
-board = chess.Board()
-selected_square = None
-# Function to convert Pygame coordinates to chessboard coordinates
-def to_chess_coords(pygame_coords):
-    x, y = pygame_coords
-    col = x // (WINDOW_SIZE // 8)
-    row = 7 - y // (WINDOW_SIZE // 8)
-    return chess.square(col, row)
+        # Determine player color
+        self.player_color = chess.WHITE if white_player == "you" else chess.BLACK
+        self.ai_only = True if white_player != "you" and black_player != "you" else False
+        self.white_player = white_player
+        self.black_player = black_player
 
-# Function to convert chessboard coordinates to Pygame coordinates
-def to_pygame_coords(chess_coords):
-    col = chess.square_file(chess_coords)
-    row = 7 - chess.square_rank(chess_coords)
-    return col * (WINDOW_SIZE // 8), row * (WINDOW_SIZE // 8)
+    # Function to convert Pygame coordinates to chessboard coordinates
+    def to_chess_coords(self, pygame_coords):
+        x, y = pygame_coords
+        col = x // (self.WINDOW_SIZE // 8)
+        row = 7 - y // (self.WINDOW_SIZE // 8)
+        return chess.square(col, row)
 
-# Main loop for handling events and rendering
-running = True
-while running:
-    for event in pygame.event.get():
-        if event.type == pygame.QUIT:
-            running = False
-        elif event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:  # Left mouse button click
-            x, y = event.pos
-            square = to_chess_coords((x, y))
-            piece = board.piece_at(square)
+    # Function to convert chessboard coordinates to Pygame coordinates
+    def to_pygame_coords(self, chess_coords):
+        col = chess.square_file(chess_coords)
+        row = 7 - chess.square_rank(chess_coords)
+        return col * (self.WINDOW_SIZE // 8), row * (self.WINDOW_SIZE // 8)
+
+    def handle_events(self):
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    return False
+                elif event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:  # Left mouse button click
+                    x, y = event.pos
+                    square = self.to_chess_coords((x, y))
+                    piece = self.board.piece_at(square)
+                    if piece is not None:
+                        self.selected_square = square
+                elif event.type == pygame.MOUSEBUTTONUP and event.button == 1:  # Left mouse button release
+                    if self.selected_square is not None:
+                        x, y = event.pos
+                        target_square = self.to_chess_coords((x, y))
+                        move = chess.Move(self.selected_square, target_square)
+                        if move in self.board.legal_moves:
+                            self.board.push(move)
+                        self.selected_square = None
+            return True
+            
+    # Function to draw the game on the screen
+    def draw(self):
+        # Clear the screen and draw the chessboard image
+        self.screen.fill((255, 255, 255))
+        self.screen.blit(self.chessboard_img, (0, 0))
+
+        # Draw the pieces on the board
+        for square in chess.SQUARES:
+            piece = self.board.piece_at(square)
             if piece is not None:
-                selected_square = square
-        elif event.type == pygame.MOUSEBUTTONUP and event.button == 1:  # Left mouse button release
-            if selected_square is not None:
-                x, y = event.pos
-                target_square = to_chess_coords((x, y))
-                move = chess.Move(selected_square, target_square)
-                if move in board.legal_moves:
-                    board.push(move)
-                selected_square = None
+                # Determine the color of the piece
+                color_suffix = "_w" if piece.color == chess.WHITE else "_b"
 
-    # Clear the screen and draw the chessboard image
-    screen.fill((255, 255, 255))
-    screen.blit(chessboard_img, (0, 0))
+                # Load the piece image based on the filename with color suffix
+                piece_image = pygame.image.load(f"C:/Users/vince/Downloads/pieces/{piece.symbol()}{color_suffix}.png")
+                piece_image = pygame.transform.scale(piece_image, (self.WINDOW_SIZE // 8, self.WINDOW_SIZE // 8))
 
-    # Draw the pieces on the board
-    for square in chess.SQUARES:
-        piece = board.piece_at(square)
-        if piece is not None:
-            # Determine the color of the piece
-            color_suffix = "_w" if piece.color == chess.WHITE else "_b"
+                # Calculate the position to center the piece image on the square
+                x, y = self.to_pygame_coords(square)
+                piece_x = x + (self.WINDOW_SIZE // 8 - piece_image.get_width()) // 2
+                piece_y = y + (self.WINDOW_SIZE // 8 - piece_image.get_height()) // 2
+                    
+                self.screen.blit(piece_image, (piece_x, piece_y))
 
-            # Load the piece image based on the filename with color suffix
-            piece_image = pygame.image.load(f"C:/Users/vince/Downloads/pieces/{piece.symbol()}{color_suffix}.png")
-            piece_image = pygame.transform.scale(piece_image, (WINDOW_SIZE // 8, WINDOW_SIZE // 8))
+        # Update the display
+        pygame.display.flip()
 
-            # Calculate the position to center the piece image on the square
-            x, y = to_pygame_coords(square)
-            piece_x = x + (WINDOW_SIZE // 8 - piece_image.get_width()) // 2
-            piece_y = y + (WINDOW_SIZE // 8 - piece_image.get_height()) // 2
+    # Function to update the game state
+    def update(self):
+        # Check if it's the AI's turn and get its move
+        if not self.board.is_game_over():
+            if self.board.turn and self.white_player == "engine" or not self.board.turn and self.black_player == "engine":
+                ai_move = chess_player.get_best_move(self.board)
+                self.board.push(ai_move)
+            elif self.board.turn and self.white_player == "random" or not self.board.turn and self.black_player == "random":
+                ai_move = chess_player.random_move_player(self.board)
+                self.board.push(ai_move)
 
-            screen.blit(piece_image, (piece_x, piece_y))
+    # Function to run the game loop
+    def run(self):
+        running = True
+        while running:
+            running = self.handle_events()
 
-    # Update the display
-    pygame.display.flip()
+            # Draw the game on the screen
+            self.draw()
 
-    # Check if it's the AI's turn and get its move
-    if not board.is_game_over() and board.turn == chess.BLACK:
-        ai_move = chess_player.get_best_move(board)
-        board.push(ai_move)
+            # Update the game state
+            self.update()
 
-    # Limit the frame rate
-    clock.tick(60)
+            # Update the display
+            pygame.display.flip()
 
-# Quit Pygame
-pygame.quit()
+            # Limit the frame rate
+            self.clock.tick(60)
+
+        # Quit Pygame
+        pygame.quit()
+
+def main():
+    game = ChessGame("engine", "random")
+    game.run()
+
+
+if __name__ == "__main__":
+    main()
