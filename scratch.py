@@ -1,8 +1,14 @@
+import os,sys,argparse
 import pygame
 from PIL import Image
 import chess
 import chess_player
+import mychess.lib
 
+################################################################################################
+# Main chess-playing application.
+# Vincent Do, July 2023
+#
 class ChessGame:
     def __init__(self, white_player="you", black_player="you"):
         # Set up the Pygame window
@@ -129,8 +135,16 @@ class ChessGame:
         pygame.quit()
 
 def main():
-    game = ChessGame("random", "alphabeta")
-    game.run()
+    parser = argparse.ArgumentParser(
+        description     = 'My version of MP05', 
+        formatter_class = argparse.ArgumentDefaultsHelpFormatter)
+    parser.add_argument('--white_player', default = 'you',
+                        choices = ('random', 'you', 'engine', 'alphabeta'))
+    parser.add_argument('--black_player', default = 'you',
+                        choices = ('random', 'you', 'engine', 'alphabeta'))
+    args   = parser.parse_args()
+    application = ChessGame(args.white_player, args.black_player)
+    application.run()
 
 
 if __name__ == "__main__":

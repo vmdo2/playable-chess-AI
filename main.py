@@ -106,7 +106,7 @@ class Application():
                         self.side, self.board, self.flags)
                 elif self.player[self.side] == 'alphabeta':
                     value, moveList, moveTree = submitted.alphabeta(
-                        self.side, self.board, self.flags, self.depth[self.side])
+                        self.side, self.board, self.flags, 1)
                 elif self.player[self.side] == 'stochastic':
                     value, moveList, moveTree = submitted.stochastic(
                         self.side, self.board, self.flags, self.depth[self.side],

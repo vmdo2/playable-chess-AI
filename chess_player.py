@@ -1,61 +1,36 @@
 import math
-import os,sys,argparse
 import random
 import pygame
 import mychess.lib
-import pgn_parser
 import submitted
 import chess
 import chess.pgn
 import chess.svg
 import chess.engine
+import mychess.lib
+from mychess.lib.heuristics import evaluate
+
+# This function converts the board format into an array for the evaluate function in mychess.lib.heuristics.
+def evaluate_helper(board):
+    piece_map = board.piece_map()
+    white_pieces = []
+    black_pieces = []
+
+    for square, piece in piece_map.items():
+        piece_type = piece.symbol().lower()
+        x, y = chess.square_file(square), chess.square_rank(square)
+
+        if piece.color == chess.WHITE:
+            white_pieces.append((x + 1, 8 - y, piece_type))
+        else:
+            black_pieces.append((x + 1, 8 - y, piece_type))
+    return [white_pieces] + [black_pieces]
 
 def get_best_move(board, time_limit=2):
     with chess.engine.SimpleEngine.popen_uci("C:/Users/vince/Downloads/scid_windows_5.0.2/scid_windows_x64/engines/stockfish.exe") as engine:
         result = engine.play(board, chess.engine.Limit(time=time_limit))
         engine.close()
         return result.move
-
-def evaluate_board(board):
-    with chess.engine.SimpleEngine.popen_uci("C:/Users/vince/Downloads/scid_windows_5.0.2/scid_windows_x64/engines/stockfish.exe") as engine:
-        info = engine.analyse(board, chess.engine.Limit(time=0.1))
-        score = info["score"].white().score(mate_score=10000)  # Convert the score to centipawns
-        engine.close()
-        return score
-
-def evaluate_board_simple(board):
-    piece_values = {
-        chess.PAWN: 1,
-        chess.KNIGHT: 3,
-        chess.BISHOP: 3,
-        chess.ROOK: 5,
-        chess.QUEEN: 9,
-        chess.KING: 100  # Just an arbitrary high value for simplicity
-    }
-
-    score = 0
-
-    # Check for checkmate and return a very high value if it's a checkmate
-    if board.is_checkmate():
-        return 10000 if board.turn == chess.WHITE else -10000
-
-    for square in chess.SQUARES:
-        piece = board.piece_at(square)
-
-        if piece is None:
-            continue
-
-        piece_value = piece_values[piece.piece_type]
-        if piece.color == chess.WHITE:
-            score += piece_value
-        else:
-            score -= piece_value
-    
-    # Bonus for giving check or checkmate
-    if board.is_check():
-        score += 50
-
-    return score
 
 def random_move_player(board):
     legal_moves = list(board.legal_moves)
@@ -86,7 +61,7 @@ def alphabeta(side, board, depth, alpha=-math.inf, beta=math.inf):
 
 def alphabetahelper(side, board, depth, alpha=-math.inf, beta=math.inf):
     if depth == 0 or board.is_game_over() or board.is_checkmate():
-      return evaluate_board_simple(board)
+      return evaluate(evaluate_helper(board))
     if (side):
       value = -10000
       for move in board.legal_moves:
