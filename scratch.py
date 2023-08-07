@@ -104,7 +104,7 @@ class ChessGame:
                 ai_move = chess_player.random_move_player(self.board)
                 self.board.push(ai_move)
             elif self.board.turn and self.white_player == "alphabeta" or not self.board.turn and self.black_player == "alphabeta":
-                ai_move = chess_player.get_best_move_alphabeta(self.board, 2)
+                ai_move = chess_player.alphabeta(self.board.turn, self.board, 3)
                 self.board.push(ai_move)
 
     # Function to run the game loop
