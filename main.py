@@ -135,7 +135,7 @@ class ChessGame:
 
 def main():
     parser = argparse.ArgumentParser(
-        description     = 'My version of MP05', 
+        description     = 'AI Chess Player', 
         formatter_class = argparse.ArgumentDefaultsHelpFormatter)
     parser.add_argument('--white_player', default = 'you',
                         choices = ('random', 'you', 'engine', 'alphabeta'))
