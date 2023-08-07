@@ -1,14 +1,11 @@
 import math
 import random
 import pygame
-import mychess.lib
-import submitted
 import chess
 import chess.pgn
 import chess.svg
 import chess.engine
-import mychess.lib
-from mychess.lib.heuristics import evaluate
+import heuristics
 
 # This function converts the board format into an array for the evaluate function in mychess.lib.heuristics.
 def evaluate_helper(board):
@@ -61,7 +58,7 @@ def alphabeta(side, board, depth, alpha=-math.inf, beta=math.inf):
 
 def alphabetahelper(side, board, depth, alpha=-math.inf, beta=math.inf):
     if depth == 0 or board.is_game_over() or board.is_checkmate():
-      return evaluate(evaluate_helper(board))
+      return heuristics.evaluate(evaluate_helper(board))
     if (side):
       value = -10000
       for move in board.legal_moves:

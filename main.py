@@ -1,182 +1,150 @@
 import os,sys,argparse
-import random
 import pygame
-import mychess.lib
-import submitted
+from PIL import Image
+import chess
+import chess_player
 
 ################################################################################################
 # Main chess-playing application.
-# Mark Hasegawa-Johnson, March 2021,
-# based on PyChess/chess/mysingleplayer.py.
+# Vincent Do, July 2023
 #
-class Application():
-    def __init__(self, players, depths, breadths, movestr="", heuristic=None):
-        self.moves = movestr.split()
-        self.side, self.board, self.flags = mychess.lib.convertMoves(self.moves)
-
-        # mp5 player0 corresponds to "side False"==white==MAX in PyChess
-        self.player = players
-        self.depth = depths
-        self.breadth = breadths
-        self.sel = [0,0]
-        if heuristic:
-            self.heuristic = heuristic
-
-        self.buttons = {
-            'quit' : pygame.Rect(460,0,40,50),
-            'saveGame' : pygame.Rect(350,460,150,30),
-            'undo' : pygame.Rect(0,0,80,50)
-        }
-
-    def close(self):
-        pygame.quit()
-        quit()
-
-    def makemove(self, fro, to):
-        '''
-        Check whether move fro -> to results in pawn promotion.
-        Animate the move on the game baord.
-        Morph self.side, self.board, and self.flags in response to the move.
-        Append the move to the list self.moves.
-        '''
-        promote = mychess.lib.getPromote(self.win, self.side, self.board, fro, to)
-        if not mychess.lib.core.getType(self.side, self.board, fro):
-            raise RunTimeError('Player %d has no piece at position %d, %d'%(int(self.side),fro[0],fro[1]))
-        mychess.lib.animate(self.win, int(self.side), self.board, fro, to, self.prefs,
-                          self.player[True]=='human')
-        self.side, self.board, self.flags = mychess.lib.makeMove(
-            self.side,  self.board, fro, to, self.flags, promote)
-        self.moves.append(mychess.lib.encode(fro, to, promote))
-
-    def heuristic_move(side, board, flags):
-        'Use a provided heuristic function to choose a move'
-        return(self.heuristic(side, board, flags))
-        
-    def run(self):
+class ChessGame:
+    def __init__(self, white_player="you", black_player="random"):
+        # Set up the Pygame window
         pygame.init()
-        if pygame.version.vernum[0] >= 2:
-            self.win = pygame.display.set_mode((500, 500), pygame.SCALED)
-        else:
-            self.win = pygame.display.set_mode((500, 500))
+        self.WINDOW_SIZE = 400
+        self.screen = pygame.display.set_mode((self.WINDOW_SIZE, self.WINDOW_SIZE))
+        pygame.display.set_caption('Chessboard')
+        self.clock = pygame.time.Clock()
 
-        self.prefs = { 'flip' : True, 'allow_undo' : True, 'show_moves' : True }
-
-        clock = pygame.time.Clock()
-        mychess.lib.start(self.win, self.prefs)
-
-        # Continue until there is no move left for the current player
-        while not mychess.lib.isEnd(self.side, self.board, self.flags):
-            clock.tick(25)
-            for event in pygame.event.get():
-                if event.type == pygame.QUIT:
-                    self.close()
-                elif event.type == pygame.MOUSEBUTTONDOWN:
-                    x, y = event.pos
-                    if self.buttons['quit'].collidepoint(x,y):
-                        self.close()
-                    elif self.buttons['saveGame'].collidepoint(x,y):
-                        if mychess.lib.prompt(self.win, mychess.lib.saveGame(self.moves, "mp5", player)):
-                            self.close()
-                    elif self.buttons['undo'].collidepoint(x,y):
-                        if self.player[self.side]=='human':
-                            self.moves = mychess.lib.undo(self.moves, 2)
-                        else:
-                            self.moves = mychess.lib.undo(self.moves)
-                        self.side, self.board, self.flags = mychess.lib.convertMoves(self.moves)
-
-                    elif self.player[self.side] == 'human' and 50 < x < 450 and 50 < y < 450:
-                        x, y = x // 50, y // 50         # convert x and y to chess coords
-                        if self.prefs["flip"] and self.player[True]=='human':  # if board is flipped
-                            x, y = 9 - x, 9 - y
-                        fro = self.sel
-                        self.sel = to = [x, y]
-                        if mychess.lib.isValidMove(self.side, self.board, self.flags, fro, to):
-                            self.makemove(fro, to)
-
-            if self.player[self.side] != 'human':
-                self.sel = [0,0]
-                if self.player[self.side] == 'random':
-                    value, moveList, moveTree = submitted.random(
-                        self.side, self.board, self.flags, random.choice)
-                elif self.player[self.side] == 'minimax':
-                    value, moveList, moveTree = submitted.minimax(
-                        self.side, self.board, self.flags, self.depth[self.side])
-                elif self.player[self.side] == 'heuristic':
-                    value, moveList, moveTree = heuristic_move(
-                        self.side, self.board, self.flags)
-                elif self.player[self.side] == 'alphabeta':
-                    value, moveList, moveTree = submitted.alphabeta(
-                        self.side, self.board, self.flags, 1)
-                elif self.player[self.side] == 'stochastic':
-                    value, moveList, moveTree = submitted.stochastic(
-                        self.side, self.board, self.flags, self.depth[self.side],
-                        self.breadth[self.side], random.choice)
-                elif self.player[self.side] == 'extracredit':
-                    value, moveList, moveTree = submitted.stochastic(
-                        self.side, self.board, self.flags, self.depth[self.side],
-                        self.breadth[self.side], random.choice)
-                self.makemove(moveList[0][0], moveList[0][1])
+        # Load the chessboard image from your computer
+        board_image_path = "C:/Users/vince/Downloads/pieces/board.png"  # Replace this with the file path to the downloaded chessboard image
+        image = Image.open(board_image_path)
+        image = image.resize((self.WINDOW_SIZE, self.WINDOW_SIZE))
             
-            mychess.lib.showScreen(self.win, self.side, self.board, self.flags, self.sel,
-                                 self.prefs, self.player[True]=='human')
+        # Convert the PIL image to a Pygame surface
+        mode = image.mode
+        size = image.size
+        data = image.tobytes()
+        self.chessboard_img = pygame.image.fromstring(data, size, mode)
 
-        # Now that the game is done, continue showing the screen until the user clicks quit
-        while True:
-            clock.tick(25)
+        # Initialize the chessboard and other variables
+        self.board = chess.Board()
+        self.selected_square = None
+
+        # Determine player color
+        self.player_color = chess.WHITE if white_player == "you" else chess.BLACK
+        self.ai_only = True if white_player != "you" and black_player != "you" else False
+        self.white_player = white_player
+        self.black_player = black_player
+
+    # Function to convert Pygame coordinates to chessboard coordinates
+    def to_chess_coords(self, pygame_coords):
+        x, y = pygame_coords
+        col = x // (self.WINDOW_SIZE // 8)
+        row = 7 - y // (self.WINDOW_SIZE // 8)
+        return chess.square(col, row)
+
+    # Function to convert chessboard coordinates to Pygame coordinates
+    def to_pygame_coords(self, chess_coords):
+        col = chess.square_file(chess_coords)
+        row = 7 - chess.square_rank(chess_coords)
+        return col * (self.WINDOW_SIZE // 8), row * (self.WINDOW_SIZE // 8)
+
+    def handle_events(self):
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
-                    self.close()
-                elif event.type == pygame.MOUSEBUTTONDOWN:
+                    return False
+                elif event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:  # Left mouse button click
                     x, y = event.pos
-                    if self.buttons['quit'].collidepoint(x,y):
-                        self.close()
-                    elif self.buttons['saveGame'].collidepoint(x,y):
-                        if mychess.lib.prompt(self.win, mychess.lib.saveGame(self.moves, "mp5", self.side)):
-                            self.close()
-                    elif self.buttons['undo'].collidepoint(x,y):
-                        self.moves = mychess.lib.undo(self.moves)
-                        self.side, self.board, self.flags = mychess.lib.convertMoves(self.moves)
-                        mychess.lib.showScreen(self.win, self.side, self.board, self.flags, self.sel,
-                                             self.prefs, self.player[True]=='human')
+                    square = self.to_chess_coords((x, y))
+                    piece = self.board.piece_at(square)
+                    if piece is not None:
+                        self.selected_square = square
+                elif event.type == pygame.MOUSEBUTTONUP and event.button == 1:  # Left mouse button release
+                    if self.selected_square is not None:
+                        x, y = event.pos
+                        target_square = self.to_chess_coords((x, y))
+                        move = chess.Move(self.selected_square, target_square)
+                        if move in self.board.legal_moves:
+                            self.board.push(move)
+                        self.selected_square = None
+            return True
+            
+    # Function to draw the game on the screen
+    def draw(self):
+        # Clear the screen and draw the chessboard image
+        self.screen.fill((255, 255, 255))
+        self.screen.blit(self.chessboard_img, (0, 0))
 
-################################################################################################
-# Command line arguments
-#
-if __name__ == "__main__":
+        # Draw the pieces on the board
+        for square in chess.SQUARES:
+            piece = self.board.piece_at(square)
+            if piece is not None:
+                # Determine the color of the piece
+                color_suffix = "_w" if piece.color == chess.WHITE else "_b"
+
+                # Load the piece image based on the filename with color suffix
+                piece_image = pygame.image.load(f"C:/Users/vince/Downloads/pieces/{piece.symbol()}{color_suffix}.png")
+                piece_image = pygame.transform.scale(piece_image, (self.WINDOW_SIZE // 8, self.WINDOW_SIZE // 8))
+
+                # Calculate the position to center the piece image on the square
+                x, y = self.to_pygame_coords(square)
+                piece_x = x + (self.WINDOW_SIZE // 8 - piece_image.get_width()) // 2
+                piece_y = y + (self.WINDOW_SIZE // 8 - piece_image.get_height()) // 2
+                    
+                self.screen.blit(piece_image, (piece_x, piece_y))
+
+        # Update the display
+        pygame.display.flip()
+
+    # Function to update the game state
+    def update(self):
+        # Check if it's the AI's turn and get its move
+        if not self.board.is_game_over():
+            if self.board.turn and self.white_player == "engine" or not self.board.turn and self.black_player == "engine":
+                ai_move = chess_player.get_best_move(self.board, 1)
+                self.board.push(ai_move)
+            elif self.board.turn and self.white_player == "random" or not self.board.turn and self.black_player == "random":
+                ai_move = chess_player.random_move_player(self.board)
+                self.board.push(ai_move)
+            elif self.board.turn and self.white_player == "alphabeta" or not self.board.turn and self.black_player == "alphabeta":
+                ai_move = chess_player.alphabeta(self.board.turn, self.board, 3)
+                self.board.push(ai_move)
+
+    # Function to run the game loop
+    def run(self):
+        running = True
+        while running:
+            running = self.handle_events()
+
+            # Draw the game on the screen
+            self.draw()
+
+            # Update the game state
+            self.update()
+
+            # Update the display
+            pygame.display.flip()
+
+            # Limit the frame rate
+            self.clock.tick(60)
+
+        # Quit Pygame
+        pygame.quit()
+
+def main():
     parser = argparse.ArgumentParser(
-        description     = 'CS440 MP5 Chess', 
+        description     = 'My version of MP05', 
         formatter_class = argparse.ArgumentDefaultsHelpFormatter)
-
-    parser.add_argument('--player0', default = 'human',
-                        choices = ('random', 'human', 'minimax', 'alphabeta', 'stochastic'),
-                        help = 'Is player 0 a human, a random player, or some type of AI?')
-    parser.add_argument('--player1', default = 'random',
-                        choices = ('random', 'human', 'minimax', 'alphabeta', 'stochastic'),
-                        help = 'Is player 1 a human, a random player, or some type of AI?')
-    parser.add_argument('--depth0', type=int, default=2,
-                        help = 'Depth to which player 0 should search, if player 0 is an AI.')
-    parser.add_argument('--depth1', type=int, default=2,
-                        help = 'Depth to which player 1 should search, if player 1 is an AI.')
-    parser.add_argument('--breadth0', type=int, default=2,
-                        help = 'Breadth to which player 0 should search, if player 0 is stochastic.')
-    parser.add_argument('--breadth1', type=int, default=2,
-                        help = 'Breadth to which player 1 should search, if player 1 is stochastic.')
-    parser.add_argument('--loadgame', type=str, default=None,
-                        help = 'Load a saved game from res/savedGames')
-                        
-
+    parser.add_argument('--white_player', default = 'you',
+                        choices = ('random', 'you', 'engine', 'alphabeta'))
+    parser.add_argument('--black_player', default = 'you',
+                        choices = ('random', 'you', 'engine', 'alphabeta'))
     args   = parser.parse_args()
-
-    # Load a previous game, if requested to do so
-    movestr = ""
-    if args.loadgame:
-        name = os.path.join("res", "savedGames", args.loadgame)
-        if os.path.exists(name):
-            with open(name, "r") as file:
-                lines = file.readlines()
-            movestr = lines[2]
-
-    # Create and run the application
-    application = Application([args.player0, args.player1], [args.depth0, args.depth1],
-                              [args.breadth0, args.breadth1], movestr)
+    application = ChessGame(args.white_player, args.black_player)
     application.run()
+
+
+if __name__ == "__main__":
+    main()
