@@ -7,12 +7,12 @@ def stockfish_evaluation(board, engine, time_limit = 0.0001):
     result = engine.analyse(board, chess.engine.Limit(time=time_limit))
     return result['score'].white(), result['pv'][0]
     
-def pgn_parse():
-    pgn = open("c:/Users/vince/Downloads/magnus.pgn")
+def pgn_parse(path_open, path_save):
+    pgn = open(path_open)
     mygame=chess.pgn.read_game(pgn)
     num = 1
     engine = chess.engine.SimpleEngine.popen_uci("C:/Users/vince/Downloads/scid_windows_5.0.2/scid_windows_x64/engines/stockfish.exe")
-    f = open("c:/Users/vince/Downloads/magnus_evalv2.pgn", "w")
+    f = open(path_save, "w")
     while True:  
         while mygame.next():
             fen = mygame.board().fen()
@@ -36,5 +36,28 @@ def pgn_parse():
     pgn.close()
     print("COMPLETE")
     return
+def read_pgn():
+    pgn = open("c:/Users/vince/Downloads/magnus_evalv2.pgn", "r")
+    mygame=chess.pgn.read_game(pgn)
+    false = 0
+    true = 0
+    num = 0
+    while True:  
+        while mygame.next():
+            fen = mygame.board().fen()
+            board = chess.Board(fen)
+            node = mygame.variations[0]
+            if (board.turn and mygame.game().headers["White"] == "Carlsen, Magnus" or not board.turn and mygame.game().headers["Black"] == "Carlsen, Magnus"):
+                true += node.comment.count("True")
+                false += node.comment.count("False")
+            mygame=mygame.next()
+        mygame=chess.pgn.read_game(pgn)
+        print("Finishing game " + str(num))
+        num += 1
+        if mygame is None:
+            break
+    print("False: " + str(false))
+    print("True: " + str(true))
+    pgn.close()
 if __name__ == '__main__':
-    pgn_parse()
+    pgn_parse("c:/Users/vince/Downloads/GM_games_2600_pt2.pgn", "c:/Users/vince/Downloads/GM_games_eval.pgn")
