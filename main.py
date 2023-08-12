@@ -18,7 +18,7 @@ class ChessGame:
         self.clock = pygame.time.Clock()
 
         # Load the chessboard image from your computer
-        board_image_path = "C:/Users/vince/Downloads/pieces/board.png"  # Replace this with the file path to the downloaded chessboard image
+        board_image_path = "pieces/board.png"  # Replace this with the file path to the downloaded chessboard image
         image = Image.open(board_image_path)
         image = image.resize((self.WINDOW_SIZE, self.WINDOW_SIZE))
             
@@ -85,7 +85,7 @@ class ChessGame:
                 color_suffix = "_w" if piece.color == chess.WHITE else "_b"
 
                 # Load the piece image based on the filename with color suffix
-                piece_image = pygame.image.load(f"C:/Users/vince/Downloads/pieces/{piece.symbol()}{color_suffix}.png")
+                piece_image = pygame.image.load(f"pieces/{piece.symbol()}{color_suffix}.png")
                 piece_image = pygame.transform.scale(piece_image, (self.WINDOW_SIZE // 8, self.WINDOW_SIZE // 8))
 
                 # Calculate the position to center the piece image on the square
