@@ -12,7 +12,7 @@ class ChessGame:
     def __init__(self, white_player="you", black_player="random"):
         # Set up the Pygame window
         pygame.init()
-        self.WINDOW_SIZE = 400
+        self.WINDOW_SIZE = 600
         self.screen = pygame.display.set_mode((self.WINDOW_SIZE, self.WINDOW_SIZE))
         pygame.display.set_caption('Chessboard')
         self.clock = pygame.time.Clock()
